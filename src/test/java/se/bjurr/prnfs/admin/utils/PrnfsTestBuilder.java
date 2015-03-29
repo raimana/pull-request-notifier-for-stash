@@ -1,5 +1,6 @@
 package se.bjurr.prnfs.admin.utils;
 
+import static com.google.common.base.Joiner.on;
 import static com.google.common.base.Optional.fromNullable;
 import static com.google.common.collect.Iterables.find;
 import static com.google.common.collect.Iterables.tryFind;
@@ -124,9 +125,9 @@ public class PrnfsTestBuilder {
     });
  }
 
- public PrnfsTestBuilder hasFieldValueAt(String field, String value, String id) {
+ public PrnfsTestBuilder hasFieldValueAt(AdminFormValues.FIELDS field, String value, String id) {
   for (final Map<String, String> fieldValue : getAdminFormFields().get(id)) {
-   if (fieldValue.get(NAME).equals(field) && fieldValue.get(VALUE).equals(value)) {
+   if (fieldValue.get(NAME).equals(field.name()) && fieldValue.get(VALUE).equals(value)) {
     return this;
    }
   }
@@ -134,9 +135,9 @@ public class PrnfsTestBuilder {
   return this;
  }
 
- public PrnfsTestBuilder hasNoneEmptyFieldAt(String field, String id) {
+ public PrnfsTestBuilder hasNoneEmptyFieldAt(AdminFormValues.FIELDS field, String id) {
   for (final Map<String, String> fieldValue : getAdminFormFields().get(id)) {
-   if (fieldValue.get(NAME).equals(field)) {
+   if (fieldValue.get(NAME).equals(field.name())) {
     if (fieldValue.get(VALUE).trim().isEmpty()) {
      fail(field + " was empty");
     } else {
@@ -153,10 +154,10 @@ public class PrnfsTestBuilder {
   return this;
  }
 
- public void hasValidationError(String field, String value) {
+ public void hasValidationError(AdminFormValues.FIELDS field, String value) {
   logger.info("Looking for " + field + "=" + value);
   for (final AdminFormError e : postResponses) {
-   if (e.getField().equals(field) && e.getValue().equals(value)) {
+   if (e.getField().equals(field.name()) && e.getValue().equals(value)) {
     return;
    }
    logger.info(e.getField() + " " + e.getValue());
@@ -203,12 +204,12 @@ public class PrnfsTestBuilder {
  }
 
  public PrnfsTestBuilder invokedUser(String user) {
-  assertTrue(this.usedUser.contains(user));
+  assertTrue(on(" ").join(usedUser), this.usedUser.contains(user));
   return this;
  }
 
  public PrnfsTestBuilder invokedPassword(String password) {
-  assertTrue(this.usedPassword.contains(password));
+  assertTrue(on(" ").join(usedPassword), this.usedPassword.contains(password));
   return this;
  }
 
@@ -234,8 +235,16 @@ public class PrnfsTestBuilder {
   return this;
  }
 
- public void invokedOnlyUrl(String url) {
+ public PrnfsTestBuilder invokedOnlyUrl(String url) {
   assertEquals(1, invokedUrl.size());
   assertTrue(invokedUrl.get(0).equals(url));
+  return this;
+ }
+
+ public void didNotUseBasicAuth() {
+  for (int i = 0; i < usedUser.size(); i++) {
+   assertTrue("user" + i, usedUser.get(i).isEmpty());
+   assertTrue("password" + i, usedPassword.get(i).isEmpty());
+  }
  }
 }

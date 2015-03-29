@@ -15,9 +15,11 @@ public class PrnfsNotification {
  private final List<PullRequestAction> triggers;
  private final String url;
  private final String user;
+ private final String filterString;
+ private final String filterRegexp;
 
- public PrnfsNotification(List<PullRequestAction> triggers, String password, String url, String user)
-   throws ValidationException {
+ public PrnfsNotification(List<PullRequestAction> triggers, String url, String user, String password,
+   String filterString, String filterRegexp) throws ValidationException {
   this.password = nullToEmpty(password).trim();
   if (nullToEmpty(url).trim().isEmpty()) {
    throw new ValidationException("url", "URL not set!");
@@ -30,10 +32,20 @@ public class PrnfsNotification {
   this.url = url;
   this.user = nullToEmpty(user).trim();
   this.triggers = checkNotNull(triggers);
+  this.filterString = filterString;
+  this.filterRegexp = filterRegexp;
  }
 
  public Optional<String> getPassword() {
   return fromNullable(password);
+ }
+
+ public Optional<String> getFilterRegexp() {
+  return fromNullable(filterRegexp);
+ }
+
+ public Optional<String> getFilterString() {
+  return fromNullable(filterString);
  }
 
  public List<PullRequestAction> getTriggers() {

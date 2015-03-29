@@ -22,11 +22,13 @@ import static se.bjurr.prnfs.listener.PrnfsPullRequestEventListener.dublicateEve
 import java.io.IOException;
 import java.net.URL;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import se.bjurr.prnfs.admin.AdminFormValues.FIELDS;
 import se.bjurr.prnfs.listener.PrnfsRenderer.PrnfsVariable;
 
 import com.google.common.io.Resources;
@@ -39,8 +41,9 @@ public class PrnfsPullRequestEventListenerTest {
   prnfsTestBuilder()
     .isLoggedInAsAdmin()
     .withNotification(
-      notificationBuilder().withFieldValue("url", "http://bjurr.se/").withFieldValue("events", OPENED.name()).build())
-    .store().trigger(pullRequestEventBuilder() //
+      notificationBuilder().withFieldValue(AdminFormValues.FIELDS.url, "http://bjurr.se/")
+        .withFieldValue(AdminFormValues.FIELDS.events, OPENED.name()).build()).store()
+    .trigger(pullRequestEventBuilder() //
       .withToRef(pullRequestRefBuilder()) //
       .withId(10L).withPullRequestAction(MERGED).build()).invokedNoUrl();
  }
@@ -50,8 +53,9 @@ public class PrnfsPullRequestEventListenerTest {
   prnfsTestBuilder()
     .isLoggedInAsAdmin()
     .withNotification(
-      notificationBuilder().withFieldValue("url", "http://bjurr.se/").withFieldValue("events", OPENED.name()).build())
-    .store().trigger(pullRequestEventBuilder().withPullRequestAction(OPENED).build()).invokedUrl("http://bjurr.se/");
+      notificationBuilder().withFieldValue(AdminFormValues.FIELDS.url, "http://bjurr.se/")
+        .withFieldValue(AdminFormValues.FIELDS.events, OPENED.name()).build()).store()
+    .trigger(pullRequestEventBuilder().withPullRequestAction(OPENED).build()).invokedUrl("http://bjurr.se/");
  }
 
  @Test
@@ -63,8 +67,9 @@ public class PrnfsPullRequestEventListenerTest {
    prnfsTestBuilder()
      .isLoggedInAsAdmin()
      .withNotification(
-       notificationBuilder().withFieldValue("url", "http://bjurr.se/${" + prnfsVariable.name() + "}")
-         .withFieldValue("events", OPENED.name()).build())
+       notificationBuilder()
+         .withFieldValue(AdminFormValues.FIELDS.url, "http://bjurr.se/${" + prnfsVariable.name() + "}")
+         .withFieldValue(AdminFormValues.FIELDS.events, OPENED.name()).build())
      .store()
      .trigger(
        pullRequestEventBuilder() //
@@ -84,8 +89,9 @@ public class PrnfsPullRequestEventListenerTest {
    prnfsTestBuilder()
      .isLoggedInAsAdmin()
      .withNotification(
-       notificationBuilder().withFieldValue("url", "http://bjurr.se/${" + prnfsVariable.name() + "}")
-         .withFieldValue("events", OPENED.name()).build())
+       notificationBuilder()
+         .withFieldValue(AdminFormValues.FIELDS.url, "http://bjurr.se/${" + prnfsVariable.name() + "}")
+         .withFieldValue(AdminFormValues.FIELDS.events, OPENED.name()).build())
      .store()
      .trigger(
        pullRequestEventBuilder() //
@@ -103,9 +109,9 @@ public class PrnfsPullRequestEventListenerTest {
     .withNotification(
       notificationBuilder()
         .withFieldValue(
-          "url",
+          AdminFormValues.FIELDS.url,
           "http://bjurr.se/?PULL_REQUEST_FROM_HASH=${PULL_REQUEST_FROM_HASH}&PULL_REQUEST_TO_HASH=${PULL_REQUEST_TO_HASH}&PULL_REQUEST_FROM_REPO_SLUG=${PULL_REQUEST_FROM_REPO_SLUG}&PULL_REQUEST_TO_REPO_SLUG=${PULL_REQUEST_TO_REPO_SLUG}")
-        .withFieldValue("events", OPENED.name()).build())
+        .withFieldValue(AdminFormValues.FIELDS.events, OPENED.name()).build())
     .store()
     .trigger(pullRequestEventBuilder() //
       .withFromRef(pullRequestRefBuilder().withHash("cde456").withRepositorySlug("fromslug")) //
@@ -134,12 +140,53 @@ public class PrnfsPullRequestEventListenerTest {
   prnfsTestBuilder()
     .isLoggedInAsAdmin()
     .withNotification(
-      notificationBuilder().withFieldValue("url", "http://merged.se/").withFieldValue("events", MERGED.name()).build())
+      notificationBuilder().withFieldValue(AdminFormValues.FIELDS.url, "http://merged.se/")
+        .withFieldValue(AdminFormValues.FIELDS.events, MERGED.name()).build())
     .withNotification(
-      notificationBuilder().withFieldValue("url", "http://opened.se/").withFieldValue("events", OPENED.name()).build())
-    .store().trigger(pullRequestEventBuilder() //
+      notificationBuilder().withFieldValue(AdminFormValues.FIELDS.url, "http://opened.se/")
+        .withFieldValue(AdminFormValues.FIELDS.events, OPENED.name()).build()).store()
+    .trigger(pullRequestEventBuilder() //
       .withToRef(pullRequestRefBuilder()) //
-      .withId(10L).withPullRequestAction(MERGED).build()).invokedOnlyUrl("http://merged.se/");
+      .withId(10L).withPullRequestAction(MERGED).build()).invokedOnlyUrl("http://merged.se/").didNotUseBasicAuth();
+ }
+
+ @Test
+ public void testThatBasicAuthenticationHeaderIsSentIfThereIsAUser() {
+  prnfsTestBuilder()
+    .isLoggedInAsAdmin()
+    .withNotification(
+      notificationBuilder().withFieldValue(AdminFormValues.FIELDS.url, "http://bjurr.se/")
+        .withFieldValue(AdminFormValues.FIELDS.events, OPENED.name())
+        .withFieldValue(AdminFormValues.FIELDS.user, "theuser")
+        .withFieldValue(AdminFormValues.FIELDS.password, "thepassword").build()).store()
+    .trigger(pullRequestEventBuilder().withPullRequestAction(OPENED).build()).invokedUrl("http://bjurr.se/")
+    .invokedUser("theuser").invokedPassword("thepassword");
+ }
+
+ @Test
+ public void testThatFilterCanBeUsedToIgnoreEventsThatAreOnAnotherProject() {
+  prnfsTestBuilder()
+    .isLoggedInAsAdmin()
+    .withNotification(
+      notificationBuilder().withFieldValue(AdminFormValues.FIELDS.url, "http://bjurr.se/")
+        .withFieldValue(AdminFormValues.FIELDS.events, OPENED.name()).withFieldValue(FIELDS.filter_string, "EXP")
+        .withFieldValue(FIELDS.filter_regexp, "${PULL_REQUEST_FROM_REPO_PROJECT_KEY}").build()).store()
+    .trigger(pullRequestEventBuilder() //
+      .withFromRef(pullRequestRefBuilder().withProjectKey("ABC")) //
+      .withId(10L).withPullRequestAction(OPENED).build()).invokedNoUrl();
+ }
+
+ @Test
+ public void testThatFilterCanBeUsedToTriggerEventsThatAreOnAnotherProject() {
+  prnfsTestBuilder()
+    .isLoggedInAsAdmin()
+    .withNotification(
+      notificationBuilder().withFieldValue(AdminFormValues.FIELDS.url, "http://bjurr.se/")
+        .withFieldValue(AdminFormValues.FIELDS.events, OPENED.name()).withFieldValue(FIELDS.filter_string, "EXP")
+        .withFieldValue(FIELDS.filter_regexp, "${PULL_REQUEST_FROM_REPO_PROJECT_KEY}").build()).store()
+    .trigger(pullRequestEventBuilder() //
+      .withFromRef(pullRequestRefBuilder().withProjectKey("EXP")) //
+      .withId(10L).withPullRequestAction(OPENED).build()).invokedUrl("http://bjurr.se/");
  }
 
  @Test
@@ -165,6 +212,25 @@ public class PrnfsPullRequestEventListenerTest {
   final String adminVmContent = Resources.toString(resource, UTF_8);
   for (final PrnfsVariable prnfsVariable : PrnfsVariable.values()) {
    assertTrue(prnfsVariable.name() + " in " + resource.toString(), adminVmContent.contains(prnfsVariable.name()));
+  }
+ }
+
+ @Test
+ public void testThatAdminFormFieldsAreUsedInAdminGUI() throws IOException {
+  final URL resource = getResource("admin.vm");
+  final String adminVmContent = Resources.toString(resource, UTF_8);
+  for (final AdminFormValues.FIELDS field : AdminFormValues.FIELDS.values()) {
+   assertTrue(field.name() + " in " + resource.toString(), adminVmContent.contains("name=\"" + field.name() + "\""));
+  }
+ }
+
+ @Test
+ public void testThatFieldsUsedInAdminGUIArePresentInAdminFormFields() throws IOException {
+  final URL resource = getResource("admin.vm");
+  final String adminVmContent = Resources.toString(resource, UTF_8);
+  final java.util.regex.Matcher m = Pattern.compile("<input [^n]*name=\"([^\\\"]*)\"").matcher(adminVmContent);
+  while (m.find()) {
+   assertTrue(m.group(1) + " found at " + resource.toString(), AdminFormValues.FIELDS.valueOf(m.group(1)) != null);
   }
  }
 }

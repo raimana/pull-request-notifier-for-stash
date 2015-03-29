@@ -94,6 +94,18 @@ public class SettingsStorage {
   for (final Map<String, String> event : events) {
    prnfsNotificationBuilder.withTrigger(PullRequestAction.valueOf(event.get(VALUE)));
   }
+  if (tryFind(a, predicate(AdminFormValues.FIELDS.user.name())).isPresent()) {
+   prnfsNotificationBuilder.withUser(find(a, predicate(AdminFormValues.FIELDS.user.name())).get(VALUE));
+  }
+  if (tryFind(a, predicate(AdminFormValues.FIELDS.password.name())).isPresent()) {
+   prnfsNotificationBuilder.withPassword(find(a, predicate(AdminFormValues.FIELDS.password.name())).get(VALUE));
+  }
+  if (tryFind(a, predicate(AdminFormValues.FIELDS.filter_string.name())).isPresent()) {
+   prnfsNotificationBuilder.withUser(find(a, predicate(AdminFormValues.FIELDS.filter_string.name())).get(VALUE));
+  }
+  if (tryFind(a, predicate(AdminFormValues.FIELDS.filter_regexp.name())).isPresent()) {
+   prnfsNotificationBuilder.withUser(find(a, predicate(AdminFormValues.FIELDS.filter_regexp.name())).get(VALUE));
+  }
   return prnfsNotificationBuilder.build();
  }
 

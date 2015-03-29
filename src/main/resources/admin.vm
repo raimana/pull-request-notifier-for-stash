@@ -7,7 +7,7 @@
   <body>
     <div>
       <div class="description">
-        You can use variables when invoking the URL.
+        You can use variables when invoking the URL or when forming the filter string.
         <ul>
         <li><b>${PULL_REQUEST_ID}</b></li>
         <li><b>${PULL_REQUEST_FROM_HASH}</b></li>
@@ -34,6 +34,16 @@
     <div class="prnfs-template">
       <form class="trigger">
         <input type="hidden" name="FORM_IDENTIFIER">
+        <div>
+          <fieldset>
+            <legend>Filter (Optional). Variables above are available.</legend>
+            <label for="filter_string">Filter string</label>
+            <input type="text" name="filter_string"><br/>
+            <label for="filter_regexp">Filter regexp</label>
+            <input type="text" name="filter_regexp"><br>
+            You can use <a target="_blank" href="http://jex.im/regulex/">http://jex.im/regulex/</a> to fiddle with regular expressions.
+          </fieldset>
+        </div>
         <div>
           <fieldset>
             <legend>Triggers</legend>
@@ -63,7 +73,7 @@
         </div>
         <div>
           <fieldset>
-            <legend>Basic authentication</legend>
+            <legend>Basic authentication (Optional)</legend>
             <label for="user">User</label>
             <input type="text" name="user"><br/>
             <label for="password">Password</label>
