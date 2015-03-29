@@ -8,10 +8,12 @@ http://server/job/theJob/buildWithParameters?token=TOKEN&PARAMETER=Value
 
 [Here](https://raw.githubusercontent.com/tomasbjerre/pull-request-notifier-for-stash/master/sandbox/all.png) is a screenshot of the admin GUI.
 
+Available in [Atlassian Marketplace](https://marketplace.atlassian.com/plugins/se.bjurr.prnfs.pull-request-notifier-for-stash).
+
 ## Features
 The Pull Request Notifier for Stash can
 
-* Invoke any URL when a pull request event happens.
+* Invoke any URL, or set of URL:s, when a pull request event happens.
  * With variables available to add necessary parameters.
 * Be configured to trigger on any pull request event.
 * Authenticate with HTTP BASIC authentication.
